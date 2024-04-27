@@ -107,8 +107,11 @@ for iter in range(ITERS):
             ant.choose(choice)
 
         dist = 0
-        for idx, current_node in enumerate(ant.previously_visited[:-1]):
-            next_node = ant.previously_visited[idx + 1]
+        for idx, current_node in enumerate(ant.previously_visited):
+            if idx + 1 == len(ant.previously_visited):
+                next_node = ant.previously_visited[0]
+            else:
+                next_node = ant.previously_visited[idx + 1]
             dist += distances[current_node][next_node]
 
         # Compare Solution
@@ -120,8 +123,11 @@ for iter in range(ITERS):
     # Evaporation
     pheromones *= 1 - EVAPORATION_CONSTANT
     # Pheromone Path Updates
-    for idx, current_node in enumerate(ant.previously_visited[:-1]):
-        next_node = ant.previously_visited[idx + 1]
+    for idx, current_node in enumerate(ant.previously_visited):
+        if idx + 1 == len(ant.previously_visited):
+            next_node = ant.previously_visited[0]
+        else:
+            next_node = ant.previously_visited[idx + 1]
         pheromones[current_node][next_node] += Q / dist
         pheromones[next_node][current_node] += Q / dist
 
