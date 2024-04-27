@@ -28,7 +28,7 @@ class Ant:
         self.index = index
         self.current_node = index
         self.starting_node = index
-        self.previously_visited = [self.starting_node]
+        self.previously_visited = []
 
     def announce(self):
         print(
@@ -48,7 +48,8 @@ class Ant:
     def calc_desires(self, num_nodes, pheromones, distances):
         desires = np.zeros(num_nodes)
         for node in range(num_nodes):
-            if node not in self.previously_visited:
+            if node not in self.previously_visited and node != self.starting_node:
+                print(f"Comparing {self.current_node} and {node}")
                 desires[node] = pheromones[self.current_node][node] * (
                     1 / distances[self.current_node][node]
                 )
@@ -75,7 +76,7 @@ def initialize_matrices():
 
 def reset_ants(ants):
     for ant in ants:
-        ant.previously_visited = [ant.index]
+        ant.previously_visited = []
         ant.current_node = ant.index
         ant.starting_node = ant.index
 
