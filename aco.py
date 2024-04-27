@@ -6,6 +6,7 @@ DEBUG = 0
 PHEROMONE_INITIAL_VALUE = 0.1
 EVAPORATION_CONSTANT = 0.5
 Q = 1
+MAX_DIST = 100000
 
 np.set_printoptions(precision=4)
 
@@ -64,12 +65,6 @@ def calc_desires(ant):
     desires = np.zeros(num_nodes)
     for node in range(num_nodes):
         if node not in ant.previously_visited:
-            if distances[ant.current_node][node] == 0:
-                bug_ant = ant
-                print(ant.starting_node)
-                print(ant.current_node)
-                print(ant.index)
-                raise ("div 0")
             desires[node] = pheromones[ant.current_node][node] * (
                 1 / distances[ant.current_node][node]
             )
@@ -90,7 +85,7 @@ for ant in range(num_ants):
     ants.append(Ant(index))
     current_ant = ants[ant]
 
-best_solution = {"dist": 100000, path: []}
+best_solution = {"dist": MAX_DIST, path: []}
 for iter in range(20):
     for ant in ants:
         # Construct ant solutions
@@ -100,14 +95,10 @@ for iter in range(20):
             outcomes = [node for node in range(num_nodes)]
             choice = np.random.choice(outcomes, p=probs)
             ant.choose(choice)
-        #        print(f"Ant {ant.index} path: {ant.previously_visited}")
 
         dist = 0
         for idx, current_node in enumerate(ant.previously_visited[:-1]):
             next_node = ant.previously_visited[idx + 1]
-            # print(
-            #     f"Distance from {current_node} and {next_node} = {distances[current_node][next_node]}"
-            # )
             dist += distances[current_node][next_node]
 
         # Compare Solution
