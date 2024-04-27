@@ -84,6 +84,35 @@ def reset_ants(ants):
     return ants
 
 
+def show_path(df, best_solution, iteration, display=True):
+    path_coords = df.loc[best_solution["path"]]
+
+    plt.plot(df["x_coord"], df["y_coord"], marker="o", linestyle="", color="b")
+
+    # Plot the path between consecutive points
+    for i in range(len(best_solution["path"]) - 1):
+        plt.plot(
+            [path_coords.iloc[i]["x_coord"], path_coords.iloc[i + 1]["x_coord"]],
+            [path_coords.iloc[i]["y_coord"], path_coords.iloc[i + 1]["y_coord"]],
+            linestyle="-",
+            color="r",
+        )
+
+    # Plot the path from the last point to the first point
+    plt.plot(
+        [path_coords.iloc[-1]["x_coord"], path_coords.iloc[0]["x_coord"]],
+        [path_coords.iloc[-1]["y_coord"], path_coords.iloc[0]["y_coord"]],
+        linestyle="-",
+        color="r",
+    )
+
+    if display:
+        plt.show()
+    else:
+        plt.savefig(f"iter {iteration:02}.png")
+        plt.clf()
+
+
 # Initialize
 df, distances, pheromones = initialize_matrices()
 num_ants = len(distances)
@@ -96,7 +125,7 @@ for ant in range(num_ants):
     current_ant = ants[ant]
 
 best_solution = {"dist": MAX_DIST, path: []}
-for iter in range(ITERS):
+for iteration in range(ITERS):
     for ant in ants:
         # Construct ant solutions
         for i in range(num_nodes - 1):
@@ -133,19 +162,7 @@ for iter in range(ITERS):
 
     ants = reset_ants(ants)
 
+    show_path(df, best_solution, iteration)
+
+
 print(best_solution)
-
-
-path_coords = df.loc[best_solution["path"]]
-
-plt.plot(df["x_coord"], df["y_coord"], marker="o", linestyle="", color="b")
-# Plot the path
-for i in range(len(best_solution["path"]) - 1):
-    plt.plot(
-        [path_coords.iloc[i]["x_coord"], path_coords.iloc[i + 1]["x_coord"]],
-        [path_coords.iloc[i]["y_coord"], path_coords.iloc[i + 1]["y_coord"]],
-        linestyle="-",
-        color="r",
-    )
-
-plt.show()
