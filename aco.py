@@ -25,12 +25,12 @@ class Ant:
     def __init__(self, index):
         self.index = index
         self.current_node = index
-        self.starting_point = index
-        self.previously_visited = [self.starting_point]
+        self.starting_node = index
+        self.previously_visited = [self.starting_node]
 
     def announce(self):
         print(
-            f"ant at {node_dict[self.current_node]} started at point {node_dict[self.starting_point]} has visited {self.previously_visited}"
+            f"ant at {node_dict[self.current_node]} started at node {node_dict[self.starting_node]} has visited {self.previously_visited}"
         )
 
     def choose(self, target_node):
@@ -64,6 +64,12 @@ def calc_desires(ant):
     desires = np.zeros(num_nodes)
     for node in range(num_nodes):
         if node not in ant.previously_visited:
+            if distances[ant.current_node][node] == 0:
+                bug_ant = ant
+                print(ant.starting_node)
+                print(ant.current_node)
+                print(ant.index)
+                raise ("div 0")
             desires[node] = pheromones[ant.current_node][node] * (
                 1 / distances[ant.current_node][node]
             )
@@ -84,56 +90,43 @@ for ant in range(num_ants):
     ants.append(Ant(index))
     current_ant = ants[ant]
 
+best_solution = {"dist": 100000, path: []}
+for iter in range(20):
+    for ant in ants:
+        # Construct ant solutions
+        for i in range(num_nodes - 1):
+            desires = calc_desires(ant)
+            probs = desires / np.sum(desires)
+            outcomes = [node for node in range(num_nodes)]
+            choice = np.random.choice(outcomes, p=probs)
+            ant.choose(choice)
+        #        print(f"Ant {ant.index} path: {ant.previously_visited}")
 
-# Construct ant solutions
-for ant in ants:
-    for i in range(num_nodes - 1):
-        desires = calc_desires(ant)
-        probs = desires / np.sum(desires)
-        outcomes = [node for node in range(num_nodes)]
-        choice = np.random.choice(outcomes, p=probs)
-        ant.choose(choice)
-    print(f"Ant {ant.index} path: {ant.previously_visited}")
+        dist = 0
+        for idx, current_node in enumerate(ant.previously_visited[:-1]):
+            next_node = ant.previously_visited[idx + 1]
+            # print(
+            #     f"Distance from {current_node} and {next_node} = {distances[current_node][next_node]}"
+            # )
+            dist += distances[current_node][next_node]
 
-    dist = 0
-    for idx, current_point in enumerate(ant.previously_visited[:-1]):
-        next_point = ant.previously_visited[idx + 1]
-        print(
-            f"Distance from {current_point} and {next_point} = {distances[current_point][next_point]}"
-        )
-        dist += distances[current_point][next_point]
+        # Compare Solution
+        if dist < best_solution["dist"]:
+            best_solution["dist"] = dist
+            best_solution["path"] = ant.previously_visited
 
-    print(dist)
-    break
+    # Update Pheromones
+    # Evaporation
+    pheromones *= 1 - EVAPORATION_CONSTANT
+    # Pheromone Path Updates
+    for idx, current_node in enumerate(ant.previously_visited[:-1]):
+        next_node = ant.previously_visited[idx + 1]
+        pheromones[current_node][next_node] += Q / dist
+        pheromones[next_node][current_node] += Q / dist
 
-# Evaporation
-pheromones *= 1 - EVAPORATION_CONSTANT
-
-
-old = """    
-    probs = desires / np.sum(desires)
-    outcomes = [node for node in range(num_nodes)]
-    choice = np.random.choice(outcomes, p=probs)
-    ant.choose(choice)
-    pheromones[current_ant.current_node][node] += (
-        Q / distances[current_ant.current_node][node]
-    )
-
-for idx, ant in enumerate(ants):
-    solution = ant.previously_visited
-    ant.previously_visited = [idx]
-    print(solution)
-
-# Update pheromones
-prev_pheromones = prev_pheromones * (1 - EVAPORATION_CONSTANT)
-pheromones = pheromones + prev_pheromones
-
-
-plt.matshow(pheromones, cmap="viridis")
-plt.xticks(np.arange(8), ["A", "B", "C", "D", "E", "F", "G", "H"])
-plt.yticks(np.arange(8), ["A", "B", "C", "D", "E", "F", "G", "H"])
-
-
-plt.colorbar()
-# plt.show()
-"""
+    # Reset ants
+    for ant in ants:
+        ant.previously_visited = [ant.index]
+        ant.current_node = ant.index
+        ant.starting_node = ant.index
+        ant.announce()
