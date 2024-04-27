@@ -73,6 +73,15 @@ def initialize_matrices():
     return (distances, pheromones)
 
 
+def reset_ants(ants):
+    for ant in ants:
+        ant.previously_visited = [ant.index]
+        ant.current_node = ant.index
+        ant.starting_node = ant.index
+
+    return ants
+
+
 # Initialize
 distances, pheromones = initialize_matrices()
 num_ants = len(distances)
