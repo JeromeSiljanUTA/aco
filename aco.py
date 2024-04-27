@@ -84,7 +84,6 @@ for ant in range(num_ants):
     ants.append(Ant(index))
     current_ant = ants[ant]
 
-prev_pheromones = pheromones.copy()
 
 # Construct ant solutions
 for ant in ants:
@@ -95,6 +94,20 @@ for ant in ants:
         choice = np.random.choice(outcomes, p=probs)
         ant.choose(choice)
     print(f"Ant {ant.index} path: {ant.previously_visited}")
+
+    dist = 0
+    for idx, current_point in enumerate(ant.previously_visited[:-1]):
+        next_point = ant.previously_visited[idx + 1]
+        print(
+            f"Distance from {current_point} and {next_point} = {distances[current_point][next_point]}"
+        )
+        dist += distances[current_point][next_point]
+
+    print(dist)
+    break
+
+# Evaporation
+pheromones *= 1 - EVAPORATION_CONSTANT
 
 
 old = """    
