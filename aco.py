@@ -1,8 +1,11 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
-ITERS = 20
+start_time = time.time()
+
+ITERS = 200
 DEBUG = 0
 PHEROMONE_INITIAL_VALUE = 0.1
 EVAPORATION_CONSTANT = 0.5
@@ -124,14 +127,15 @@ for ant in range(num_ants):
     ants.append(Ant(index))
     current_ant = ants[ant]
 
-best_solution = {"dist": MAX_DIST, path: []}
+best_solution = {"dist": MAX_DIST, "path": []}
+
+outcomes = [node for node in range(num_nodes)]
 for iteration in range(ITERS):
     for ant in ants:
         # Construct ant solutions
         for i in range(num_nodes - 1):
             desires = ant.calc_desires(num_nodes, pheromones, distances)
             probs = desires / np.sum(desires)
-            outcomes = [node for node in range(num_nodes)]
             choice = np.random.choice(outcomes, p=probs)
             ant.choose(choice)
 
@@ -162,7 +166,10 @@ for iteration in range(ITERS):
 
     ants = reset_ants(ants)
 
-    show_path(df, best_solution, iteration)
+    #show_path(df, best_solution, iteration)
 
 
 print(best_solution)
+
+end_time = time.time()
+print(f"Took {end_time-start_time} seconds")
