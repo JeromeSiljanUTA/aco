@@ -49,7 +49,8 @@ class Ant:
         desires = np.zeros(num_nodes)
         for node in range(num_nodes):
             if node not in self.previously_visited and node != self.starting_node:
-                print(f"Comparing {self.current_node} and {node}")
+                if DEBUG:
+                    print(f"Comparing {self.current_node} and {node}")
                 desires[node] = pheromones[self.current_node][node] * (
                     1 / distances[self.current_node][node]
                 )
@@ -71,7 +72,7 @@ def initialize_matrices():
                 (df.iloc[i]["x_coord"] - df.iloc[j]["x_coord"]) ** 2
                 + (df.iloc[i]["y_coord"] - df.iloc[j]["y_coord"]) ** 2
             )
-    return (distances, pheromones)
+    return (df, distances, pheromones)
 
 
 def reset_ants(ants):
@@ -84,7 +85,7 @@ def reset_ants(ants):
 
 
 # Initialize
-distances, pheromones = initialize_matrices()
+df, distances, pheromones = initialize_matrices()
 num_ants = len(distances)
 num_nodes = len(distances)
 ants = []
@@ -127,3 +128,18 @@ for iter in range(ITERS):
     ants = reset_ants(ants)
 
 print(best_solution)
+
+
+path_coords = df.loc[best_solution["path"]]
+
+plt.plot(df["x_coord"], df["y_coord"], marker="o", linestyle="", color="b")
+# Plot the path
+for i in range(len(best_solution["path"]) - 1):
+    plt.plot(
+        [path_coords.iloc[i]["x_coord"], path_coords.iloc[i + 1]["x_coord"]],
+        [path_coords.iloc[i]["y_coord"], path_coords.iloc[i + 1]["y_coord"]],
+        linestyle="-",
+        color="r",
+    )
+
+plt.show()
