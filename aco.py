@@ -45,6 +45,17 @@ class Ant:
                 print(f"ant at {ant.current_node} chooses node {node_dict[choice]}")
             self.current_node = target_node
 
+    def calc_desires(self, num_nodes, pheromones, distances):
+        desires = np.zeros(num_nodes)
+        for node in range(num_nodes):
+            if node not in self.previously_visited:
+                desires[node] = pheromones[self.current_node][node] * (
+                    1 / distances[self.current_node][node]
+                )
+            else:
+                desires[node] = 0
+        return desires
+
 
 def initialize_matrices():
     df = pd.read_csv("aco_locations.csv", index_col="Point")
@@ -60,19 +71,6 @@ def initialize_matrices():
                 + (df.iloc[i]["y_coord"] - df.iloc[j]["y_coord"]) ** 2
             )
     return (distances, pheromones)
-
-
-def calc_desires(ant):
-    desires = np.zeros(num_nodes)
-    for node in range(num_nodes):
-        if node not in ant.previously_visited:
-            desires[node] = pheromones[ant.current_node][node] * (
-                1 / distances[ant.current_node][node]
-            )
-        else:
-            desires[node] = 0
-
-    return desires
 
 
 # Initialize
@@ -91,7 +89,7 @@ for iter in range(ITERS):
     for ant in ants:
         # Construct ant solutions
         for i in range(num_nodes - 1):
-            desires = calc_desires(ant)
+            desires = ant.calc_desires(num_nodes, pheromones, distances)
             probs = desires / np.sum(desires)
             outcomes = [node for node in range(num_nodes)]
             choice = np.random.choice(outcomes, p=probs)
@@ -121,4 +119,3 @@ for iter in range(ITERS):
         ant.previously_visited = [ant.index]
         ant.current_node = ant.index
         ant.starting_node = ant.index
-        ant.announce()
