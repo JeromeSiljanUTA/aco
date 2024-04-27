@@ -3,7 +3,10 @@ import numpy as np
 import sys
 
 PHEREMONE_INITIAL_VALUE = 0.0
+EVAPORATION_CONSTANT = 0.5
 Q = 1
+
+np.set_printoptions(precision=4)
 
 node_dict = {
     0: "A",
@@ -19,19 +22,21 @@ node_dict = {
 
 class Ant:
     def __init__(self, index, starting_point):
-        self.index = index
+        self.current_node = index
         self.starting_point = starting_point
-        self.previously_visited = [index]
+        self.previously_visited = [starting_point]
 
     def announce(self):
         print(
-            f"ant {self.index} starting at point {node_dict[self.starting_point]} has visited {self.previously_visited}"
+            f"ant at {node_dict[self.current_node]} started at point {node_dict[self.starting_point]} has visited {self.previously_visited}"
         )
 
-
-def print_arr(arr):
-    fmt = ["%f" for _ in range(arr.shape[1])]
-    np.savetxt(sys.stdout, arr, fmt=fmt, delimiter="\t")
+    def choose(self, target_node):
+        if self.current_node not in self.previously_visited:
+            self.previously_visited.append(self.current_node)
+        if target_node not in self.previously_visited:
+            print(f"ant at {ant.current_node} chooses node {node_dict[choice]}")
+            self.current_node = target_node
 
 
 def initialize():
@@ -47,12 +52,6 @@ def initialize():
                 (df.iloc[i]["x_coord"] - df.iloc[j]["x_coord"]) ** 2
                 + (df.iloc[i]["y_coord"] - df.iloc[j]["y_coord"]) ** 2
             )
-
-    # Convert distances to DataFrame
-
-    # distances_df = pd.DataFrame(distances, index=df.index, columns=df.index)
-    # pheremones_df = pd.DataFrame(pheremones, index=df.index, columns=df.index)
-
     return (df, distances, pheremones)
 
 
@@ -63,16 +62,39 @@ num_nodes = len(df)
 
 ants = []
 
+prev_pheremones = pheremones.copy()
+
+print(distances)
+
 # Construct ant solutions
 for ant in range(num_ants):
     starting_node = ant
-    ants.append(Ant(ant, starting_node))
+    index = ant
+    ants.append(Ant(index, starting_node))
     current_ant = ants[ant]
-    current_ant.announce()
     for node in range(num_nodes):
         if node not in current_ant.previously_visited:
-            pheremones[current_ant.index][node] += (
-                Q / distances[current_ant.index][node]
+            pheremones[current_ant.current_node][node] += (
+                Q / distances[current_ant.current_node][node]
             )
 
-print_arr(pheremones)
+
+# Update pheremones
+prev_pheremones = prev_pheremones * (1 - EVAPORATION_CONSTANT)
+pheremones = pheremones + prev_pheremones
+
+
+# Choose path
+ant = ants[0]
+
+desires = np.zeros(num_nodes)
+for node in range(num_nodes):
+    if node not in ant.previously_visited:
+        desires[node] = pheremones[ant.current_node][node] * (
+            1 / distances[ant.current_node][node]
+        )
+
+probs = desires / np.sum(desires)
+choice = np.random.choice([node for node in range(num_nodes)], p=probs)
+ant.choose(choice)
+ant.announce()
