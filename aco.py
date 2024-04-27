@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+ITERS = 20
 DEBUG = 0
 PHEROMONE_INITIAL_VALUE = 0.1
 EVAPORATION_CONSTANT = 0.5
@@ -45,7 +46,7 @@ class Ant:
             self.current_node = target_node
 
 
-def initialize():
+def initialize_matrices():
     df = pd.read_csv("aco_locations.csv", index_col="Point")
 
     n = len(df)
@@ -58,7 +59,7 @@ def initialize():
                 (df.iloc[i]["x_coord"] - df.iloc[j]["x_coord"]) ** 2
                 + (df.iloc[i]["y_coord"] - df.iloc[j]["y_coord"]) ** 2
             )
-    return (df, distances, pheromones)
+    return (distances, pheromones)
 
 
 def calc_desires(ant):
@@ -75,9 +76,9 @@ def calc_desires(ant):
 
 
 # Initialize
-df, distances, pheromones = initialize()
-num_ants = len(df)
-num_nodes = len(df)
+distances, pheromones = initialize_matrices()
+num_ants = len(distances)
+num_nodes = len(distances)
 ants = []
 
 for ant in range(num_ants):
@@ -86,7 +87,7 @@ for ant in range(num_ants):
     current_ant = ants[ant]
 
 best_solution = {"dist": MAX_DIST, path: []}
-for iter in range(20):
+for iter in range(ITERS):
     for ant in ants:
         # Construct ant solutions
         for i in range(num_nodes - 1):
