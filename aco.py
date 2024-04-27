@@ -123,8 +123,6 @@ for iter in range(ITERS):
         pheromones[current_node][next_node] += Q / dist
         pheromones[next_node][current_node] += Q / dist
 
-    # Reset ants
-    for ant in ants:
-        ant.previously_visited = [ant.index]
-        ant.current_node = ant.index
-        ant.starting_node = ant.index
+    ants = reset_ants(ants)
+
+print(best_solution)
