@@ -130,6 +130,8 @@ for ant in range(num_ants):
 best_solution = {"dist": MAX_DIST, "path": []}
 
 outcomes = [node for node in range(num_nodes)]
+
+solutions = []
 for iteration in range(ITERS):
     for ant in ants:
         # Construct ant solutions
@@ -147,10 +149,8 @@ for iteration in range(ITERS):
                 next_node = ant.previously_visited[idx + 1]
             dist += distances[current_node][next_node]
 
-        # Compare Solution
-        if dist < best_solution["dist"]:
-            best_solution["dist"] = dist
-            best_solution["path"] = ant.previously_visited
+        solution = {'dist' : dist, 'path' : ant.previously_visited}
+        solutions.append(solution)
 
     # Update Pheromones
     # Evaporation
@@ -169,7 +169,8 @@ for iteration in range(ITERS):
     #show_path(df, best_solution, iteration)
 
 
-print(best_solution)
+sol = sorted(solutions, key=lambda x: x['dist'])
+print(sol[-1])
 
 end_time = time.time()
 print(f"Took {end_time-start_time} seconds")
