@@ -68,7 +68,7 @@ def reset_ants(ants):
 # Initialize
 df, distances_matrix, pheromones_matrix = initialize_matrices()
 
-prev_visited_matrix = np.full((NUM_ANTS, NUM_NODES), -300, dtype=int)
+prev_visited_matrix = np.full((NUM_ANTS, NUM_NODES), -1, dtype=int)
 ant_matrix = np.zeros((NUM_ANTS, SIZE_ANT_DATA), dtype=int)
 probability_matrix = np.zeros((NUM_ANTS, NUM_NODES))
 desires_matrix = np.zeros((NUM_ANTS, NUM_NODES))
@@ -92,8 +92,6 @@ best_solution = {"dist": MAX_DIST, "path": []}
 outcomes = [node for node in range(NUM_NODES)]
 for iteration in range(ITERS):
     ant_solution(prev_visited_matrix.flatten().astype("int32"))
-
-    print(prev_visited_matrix.flatten())
 
     break
     # Construct ant solutions
