@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-ITERS = 20
+ITERS = 3
 DEBUG = 0
 PHEROMONE_INITIAL_VALUE = 0.1
 EVAPORATION_CONSTANT = 0.5
@@ -25,36 +25,8 @@ prev_visited_matrix = np.full((NUM_ANTS, NUM_NODES), -1)
 desires_matrix = np.zeros((NUM_ANTS, NUM_NODES))
 probability_matrix = np.zeros((NUM_ANTS, NUM_NODES))
 
-
-class Ant:
-    def __init__(self, index):
-        self.index = index
-        self.current_node = index
-        self.starting_node = index
-        self.previously_visited = []
-
-    def choose(self, target_node):
-        if self.current_node not in self.previously_visited:
-            self.previously_visited.append(self.current_node)
-
-        if target_node not in self.previously_visited:
-            self.previously_visited.append(target_node)
-            if DEBUG:
-                print(f"ant at {ant.current_node} chooses node {node_dict[choice]}")
-            self.current_node = target_node
-
-    def calc_desires(self, num_nodes, pheromones, distances):
-        desires = np.zeros(num_nodes)
-        for node in range(num_nodes):
-            if node not in self.previously_visited and node != self.starting_node:
-                if DEBUG:
-                    print(f"Comparing {self.current_node} and {node}")
-                desires[node] = pheromones[self.current_node][node] * (
-                    1 / distances[self.current_node][node]
-                )
-            else:
-                desires[node] = 0
-        return desires
+# First element is distance, the rest show the actual path
+path_solution_matrix = np.full((NUM_ANTS, NUM_NODES + 1), MAX_DIST, dtype=float)
 
 
 def initialize_matrices():
@@ -82,40 +54,11 @@ def reset_ants(ants):
     return ants
 
 
-def show_path(df, best_solution, iteration, display=True):
-    path_coords = df.loc[best_solution["path"]]
-
-    plt.plot(df["x_coord"], df["y_coord"], marker="o", linestyle="", color="b")
-
-    # Plot the path between consecutive points
-    for i in range(len(best_solution["path"]) - 1):
-        plt.plot(
-            [path_coords.iloc[i]["x_coord"], path_coords.iloc[i + 1]["x_coord"]],
-            [path_coords.iloc[i]["y_coord"], path_coords.iloc[i + 1]["y_coord"]],
-            linestyle="-",
-            color="r",
-        )
-
-    # Plot the path from the last point to the first point
-    plt.plot(
-        [path_coords.iloc[-1]["x_coord"], path_coords.iloc[0]["x_coord"]],
-        [path_coords.iloc[-1]["y_coord"], path_coords.iloc[0]["y_coord"]],
-        linestyle="-",
-        color="r",
-    )
-
-    if display:
-        plt.show()
-    else:
-        plt.savefig(f"iter {iteration:02}.png")
-        plt.clf()
-
-
 # Initialize
 df, distances, pheromones = initialize_matrices()
 
 if len(df) != NUM_NODES:
-    printf("------------------------------check dims------------------------------\n")
+    print("------------------------------check dims------------------------------\n")
 
 for ant in range(NUM_ANTS):
     prev_visited_matrix[ant][0] = ant
@@ -132,63 +75,88 @@ for iteration in range(ITERS):
     for ant in range(NUM_ANTS):
         # Calculate desires
         for node in range(NUM_NODES):
-            current_node = ant_matrix[ant][CURRENT_NODE_COL]
-            # if haven't visited and not already there
-            if (
-                prev_visited_matrix[ant][node] != node
-                and ant_matrix[ant][STARTING_NODE_COL] != node
-            ):
+            for desire_node in range(NUM_NODES):
+                current_node = ant_matrix[ant][CURRENT_NODE_COL]
 
-                if DEBUG:
-                    print(f"Comparing {current_node} and {node}")
+                desire_node_visited = False
+                # Has desire node not been marked visited
+                for i in range(NUM_NODES):
+                    if desire_node == prev_visited_matrix[ant][i]:
+                        desire_node_visited = True
+                        break
 
-                desires_matrix[ant][node] = (
-                    (pheromones[current_node][node]) ** ALPHA
-                ) * ((1 / distances[current_node][node]) ** BETA)
-            else:
-                if DEBUG:
-                    print(f"Not comparing {current_node} and {node}")
+                if desire_node != current_node and not desire_node_visited:
+                    desire = ((pheromones[current_node][desire_node]) ** ALPHA) * (
+                        (1 / distances[current_node][desire_node]) ** BETA
+                    )
 
-                desires_matrix[ant][node] = 0
+                    desires_matrix[ant][desire_node] = desire
 
-        # Calculate probabilities
-        probability_matrix[ant] = desires_matrix[ant] / np.sum(desires_matrix[ant])
+                    if DEBUG:
+                        print(f"Comparing {current_node} and {desire_node}: {desire}")
 
-        # Choose next node
-        # Randomly choose node
-        choice = np.random.choice(outcomes, p=probability_matrix[ant])
+                else:
+                    if DEBUG:
+                        print(f"Not comparing {current_node} and {desire_node}")
 
-    # ant.choose(choice)
+                    desires_matrix[ant][desire_node] = 0
 
-    # dist = 0
-    # for idx, current_node in enumerate(ant.previously_visited):
-    #     if idx + 1 == len(ant.previously_visited):
-    #         next_node = ant.previously_visited[0]
-    #     else:
-    #         next_node = ant.previously_visited[idx + 1]
-    #     dist += distances[current_node][next_node]
+            if node != NUM_NODES - 1:
+                probability_matrix[ant] = desires_matrix[ant] / np.sum(
+                    desires_matrix[ant]
+                )
+                # Choosing next node
+                target_node = np.random.choice(outcomes, p=probability_matrix[ant])
+                current_node_visited = False
+                target_node_visited = False
 
-    # # Compare Solution
-    # if dist < best_solution["dist"]:
-    #     best_solution["dist"] = dist
-    #     best_solution["path"] = ant.previously_visited
-    break
-    # Update Pheromones
-    # Evaporation
-    pheromones *= 1 - EVAPORATION_CONSTANT
-    # Pheromone Path Updates
-    for idx, current_node in enumerate(ant.previously_visited):
-        if idx + 1 == len(ant.previously_visited):
-            next_node = ant.previously_visited[0]
-        else:
-            next_node = ant.previously_visited[idx + 1]
-        pheromones[current_node][next_node] += Q / dist
-        pheromones[next_node][current_node] += Q / dist
+                # Has current node not been marked visited
+                for i in range(NUM_NODES):
+                    if ant_matrix[ant][CURRENT_NODE_COL] != prev_visited_matrix[ant][i]:
+                        current_node_visited = True
 
-    ants = reset_ants(ants)
+                if not current_node_visited:
+                    for i in range(NUM_NODES):
+                        if prev_visited_matrix[ant][i] == -1:
+                            prev_visited_matrix[ant][i] = ant_matrix[ant][
+                                CURRENT_NODE_COL
+                            ]
 
-    show_path(df, best_solution, iteration)
-    break
+                # Has target_node been marked visited?
+                for i in range(NUM_NODES):
+                    if target_node == prev_visited_matrix[ant][i]:
+                        target_node_visited = True
 
+                target_node_set = False
+                if not target_node_visited:
+                    for i in range(NUM_NODES):
+                        if prev_visited_matrix[ant][i] == -1 and not target_node_set:
+                            prev_visited_matrix[ant][i] = target_node
+                            ant_matrix[ant][CURRENT_NODE_COL] = target_node
+                            target_node_set = True
 
-print(best_solution)
+        # Calculate path solution, distance
+
+        prev_visited_matrix[ant] = (1, 0, 2, 3, 4, 7, 6, 5)
+        dist = 0
+        for idx in range(NUM_NODES - 1):
+            current_node = prev_visited_matrix[ant][idx]
+            next_node = prev_visited_matrix[ant][idx + 1]
+            dist += distances[current_node][next_node]
+
+        dist += distances[int(prev_visited_matrix[ant][0])][
+            int(prev_visited_matrix[ant][NUM_NODES - 1])
+        ]
+
+        if dist < path_solution_matrix[ant][0]:
+            path_solution_matrix[ant][0] = dist
+            for i in range(1, NUM_NODES + 1):
+                path_solution_matrix[ant][i] = prev_visited_matrix[ant][i - 1]
+
+    for ant in range(NUM_ANTS):
+        prev_visited_matrix[ant][0] = ant
+        for node in range(1, NUM_NODES):
+            prev_visited_matrix[ant][node] = -1
+        ant_matrix[ant][INDEX_COL] = ant
+        ant_matrix[ant][CURRENT_NODE_COL] = ant
+        ant_matrix[ant][STARTING_NODE_COL] = ant
