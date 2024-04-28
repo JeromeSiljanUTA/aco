@@ -14,24 +14,24 @@ __global__ void ant_solution_kernel(float *distances_matrix,
                                     float *pheromones_matrix,
                                     int *prev_visited_matrix, int *ant_matrix,
                                     float *desires_matrix,
-                                    float *probability_matrix) {
+                                    float *probability_matrix, float*path_solution_matrix) {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx >= NUM_ANTS)
     return;
 
-  for (int i = 0; i < NUM_NODES; i++) {
+  for (int i = 0; i < NUM_NODES+1; i++) {
     printf("Index: %0.2d\tvalue: %0.2f\n", idx * NUM_NODES + i,
-           probability_matrix[idx * NUM_NODES + i]);
+           path_solution_matrix[idx * NUM_NODES + i]);
   }
 }
 
 extern "C" {
 void ant_solution(float *distances_matrix, float *pheromones_matrix,
                   int *prev_visited_matrix, int *ant_matrix,
-                  float *desires_matrix, float *probability_matrix) {
+                  float *desires_matrix, float *probability_matrix, float*path_solution_matrix) {
 
   float *d_distances_matrix, *d_pheromones_matrix, *d_desires_matrix,
-      *d_probability_matrix;
+    *d_probability_matrix, *d_path_solution_matrix;
   int *d_prev_visited_matrix, *d_ant_matrix;
 
   cudaMalloc((void **)&d_distances_matrix,
@@ -44,6 +44,9 @@ void ant_solution(float *distances_matrix, float *pheromones_matrix,
   cudaMalloc((void **)&d_desires_matrix, NUM_ANTS * NUM_NODES * sizeof(float));
   cudaMalloc((void **)&d_probability_matrix,
              NUM_ANTS * NUM_NODES * sizeof(float));
+    cudaMalloc((void **)&d_path_solution_matrix,
+	       NUM_ANTS * (NUM_NODES+1) * sizeof(float));
+
 
   cudaMemcpy(d_distances_matrix, distances_matrix,
              NUM_ANTS * NUM_NODES * sizeof(float), cudaMemcpyHostToDevice);
@@ -57,11 +60,23 @@ void ant_solution(float *distances_matrix, float *pheromones_matrix,
              NUM_ANTS * NUM_NODES * sizeof(float), cudaMemcpyHostToDevice);
   cudaMemcpy(d_probability_matrix, probability_matrix,
              NUM_ANTS * NUM_NODES * sizeof(float), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_probability_matrix, probability_matrix,
+             NUM_ANTS * (NUM_NODES+1) * sizeof(float), cudaMemcpyHostToDevice);
 
+  
   ant_solution_kernel<<<NUM_ANTS, 1>>>(d_distances_matrix, d_pheromones_matrix,
                                        d_prev_visited_matrix, d_ant_matrix,
-                                       d_desires_matrix, d_probability_matrix);
+                                       d_desires_matrix, d_probability_matrix, d_path_solution_matrix);
 
   cudaFree(d_prev_visited_matrix);
+
+  cudaFree(d_distances_matrix);
+  cudaFree(d_pheromones_matrix);
+  cudaFree(d_desires_matrix);
+  cudaFree(d_probability_matrix);
+  cudaFree(d_path_solution_matrix);
+  cudaFree(d_prev_visited_matrix);
+  cudaFree(d_ant_matrix);
+
 }
 }

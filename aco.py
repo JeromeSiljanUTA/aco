@@ -34,6 +34,7 @@ def get_ant_solution():
         POINTER(c_int),
         POINTER(c_float),
         POINTER(c_float),
+        POINTER(c_float),
     ]
     return func
 
@@ -48,6 +49,7 @@ def ant_solution(
     ant_matrix,
     desires_matrix,
     probability_matrix,
+    path_solution_matrix,
 ):
     distances_matrix_p = distances_matrix.ctypes.data_as(POINTER(c_float))
     pheromones_matrix_p = pheromones_matrix.ctypes.data_as(POINTER(c_float))
@@ -55,6 +57,7 @@ def ant_solution(
     ant_matrix_p = ant_matrix.ctypes.data_as(POINTER(c_int))
     desires_matrix_p = desires_matrix.ctypes.data_as(POINTER(c_float))
     probability_matrix_p = desires_matrix.ctypes.data_as(POINTER(c_float))
+    path_solution_matrix_p = path_solution_matrix.ctypes.data_as(POINTER(c_float))
 
     __ant_solution(
         distances_matrix_p,
@@ -63,6 +66,7 @@ def ant_solution(
         ant_matrix_p,
         desires_matrix_p,
         probability_matrix_p,
+        path_solution_matrix_p,
     )
 
 
@@ -123,8 +127,8 @@ for iteration in range(ITERS):
     ant_matrix_cuda = ant_matrix.flatten().astype("int32")
     desires_matrix_cuda = desires_matrix.flatten().astype("float32")
     probability_matrix_cuda = probability_matrix.flatten().astype("float32")
+    path_solution_matrix_cuda = path_solution_matrix.flatten().astype("float32")
 
-    print(ant_matrix)
     ant_solution(
         distances_matrix_cuda,
         pheromones_matrix_cuda,
@@ -132,6 +136,7 @@ for iteration in range(ITERS):
         ant_matrix_cuda,
         desires_matrix_cuda,
         probability_matrix_cuda,
+        path_solution_matrix_cuda,
     )
 
     break
