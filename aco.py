@@ -27,19 +27,17 @@ BETA = 1
 def get_ant_solution():
     dll = ctypes.CDLL("./ant_solution.so", mode=ctypes.RTLD_GLOBAL)
     func = dll.ant_solution
-    func.argtypes = [POINTER(c_float), POINTER(c_float), POINTER(c_float)]
+    func.argtypes = [POINTER(c_int)]
     return func
 
 
 __ant_solution = get_ant_solution()
 
 
-def ant_solution(prev_visited_matrix, distances_matrix, pheromones_matrix):
-    prev_visited_p = prev_visited_matrix.ctypes.data_as(POINTER(c_float))
-    distances_matrix_p = distances_matrix.ctypes.data_as(POINTER(c_float))
-    pheromones_matrix_p = pheromones_matrix.ctypes.data_as(POINTER(c_float))
+def ant_solution(prev_visited_matrix):
+    prev_visited_matrix_p = prev_visited_matrix.ctypes.data_as(POINTER(c_int))
 
-    __ant_solution(prev_visited_p, distances_matrix_p, pheromones_matrix_p)
+    __ant_solution(prev_visited_matrix_p)
 
 
 def initialize_matrices():
@@ -70,11 +68,10 @@ def reset_ants(ants):
 # Initialize
 df, distances_matrix, pheromones_matrix = initialize_matrices()
 
+prev_visited_matrix = np.full((NUM_ANTS, NUM_NODES), -300, dtype=int)
 ant_matrix = np.zeros((NUM_ANTS, SIZE_ANT_DATA), dtype=int)
-prev_visited_matrix = np.full((NUM_ANTS, NUM_NODES), -1)
-
-desires_matrix = np.zeros((NUM_ANTS, NUM_NODES))
 probability_matrix = np.zeros((NUM_ANTS, NUM_NODES))
+desires_matrix = np.zeros((NUM_ANTS, NUM_NODES))
 
 # First element is distance, the rest show the actual path
 path_solution_matrix = np.full((NUM_ANTS, NUM_NODES + 1), MAX_DIST, dtype=float)
@@ -94,95 +91,95 @@ best_solution = {"dist": MAX_DIST, "path": []}
 
 outcomes = [node for node in range(NUM_NODES)]
 for iteration in range(ITERS):
-    # ant_solution(
-    #     prev_visited_matrix.flatten(), distances_matrix.flatten(), pheromones_matrix.flatten()
-    # )
+    ant_solution(prev_visited_matrix.flatten().astype("int32"))
 
-    # break
+    print(prev_visited_matrix.flatten())
+
+    break
     # Construct ant solutions
-    for ant in range(NUM_ANTS):
-        # Calculate desires
-        for node in range(NUM_NODES):
-            for desire_node in range(NUM_NODES):
-                current_node = ant_matrix[ant][CURRENT_NODE_COL]
+    # for ant in range(NUM_ANTS):
+    #     # Calculate desires
+    #     for node in range(NUM_NODES):
+    #         for desire_node in range(NUM_NODES):
+    #             current_node = ant_matrix[ant][CURRENT_NODE_COL]
 
-                desire_node_visited = False
-                # Has desire node not been marked visited
-                for i in range(NUM_NODES):
-                    if desire_node == prev_visited_matrix[ant][i]:
-                        desire_node_visited = True
-                        break
+    #             desire_node_visited = False
+    #             # Has desire node not been marked visited
+    #             for i in range(NUM_NODES):
+    #                 if desire_node == prev_visited_matrix[ant][i]:
+    #                     desire_node_visited = True
+    #                     break
 
-                if desire_node != current_node and not desire_node_visited:
-                    desire = (
-                        (pheromones_matrix[current_node][desire_node]) ** ALPHA
-                    ) * ((1 / distances_matrix[current_node][desire_node]) ** BETA)
+    #             if desire_node != current_node and not desire_node_visited:
+    #                 desire = (
+    #                     (pheromones_matrix[current_node][desire_node]) ** ALPHA
+    #                 ) * ((1 / distances_matrix[current_node][desire_node]) ** BETA)
 
-                    desires_matrix[ant][desire_node] = desire
+    #                 desires_matrix[ant][desire_node] = desire
 
-                    if DEBUG:
-                        print(f"Comparing {current_node} and {desire_node}: {desire}")
+    #                 if DEBUG:
+    #                     print(f"Comparing {current_node} and {desire_node}: {desire}")
 
-                else:
-                    if DEBUG:
-                        print(f"Not comparing {current_node} and {desire_node}")
+    #             else:
+    #                 if DEBUG:
+    #                     print(f"Not comparing {current_node} and {desire_node}")
 
-                    desires_matrix[ant][desire_node] = 0
+    #                 desires_matrix[ant][desire_node] = 0
 
-            if node != NUM_NODES - 1:
-                probability_matrix[ant] = desires_matrix[ant] / np.sum(
-                    desires_matrix[ant]
-                )
-                # Choosing next node
-                target_node = np.random.choice(outcomes, p=probability_matrix[ant])
-                current_node_visited = False
-                target_node_visited = False
+    #         if node != NUM_NODES - 1:
+    #             probability_matrix[ant] = desires_matrix[ant] / np.sum(
+    #                 desires_matrix[ant]
+    #             )
+    #             # Choosing next node
+    #             target_node = np.random.choice(outcomes, p=probability_matrix[ant])
+    #             current_node_visited = False
+    #             target_node_visited = False
 
-                # Has current node not been marked visited
-                for i in range(NUM_NODES):
-                    if ant_matrix[ant][CURRENT_NODE_COL] != prev_visited_matrix[ant][i]:
-                        current_node_visited = True
+    #             # Has current node not been marked visited
+    #             for i in range(NUM_NODES):
+    #                 if ant_matrix[ant][CURRENT_NODE_COL] != prev_visited_matrix[ant][i]:
+    #                     current_node_visited = True
 
-                if not current_node_visited:
-                    for i in range(NUM_NODES):
-                        if prev_visited_matrix[ant][i] == -1:
-                            prev_visited_matrix[ant][i] = ant_matrix[ant][
-                                CURRENT_NODE_COL
-                            ]
+    #             if not current_node_visited:
+    #                 for i in range(NUM_NODES):
+    #                     if prev_visited_matrix[ant][i] == -1:
+    #                         prev_visited_matrix[ant][i] = ant_matrix[ant][
+    #                             CURRENT_NODE_COL
+    #                         ]
 
-                # Has target_node been marked visited?
-                for i in range(NUM_NODES):
-                    if target_node == prev_visited_matrix[ant][i]:
-                        target_node_visited = True
+    #             # Has target_node been marked visited?
+    #             for i in range(NUM_NODES):
+    #                 if target_node == prev_visited_matrix[ant][i]:
+    #                     target_node_visited = True
 
-                target_node_set = False
-                if not target_node_visited:
-                    for i in range(NUM_NODES):
-                        if prev_visited_matrix[ant][i] == -1 and not target_node_set:
-                            prev_visited_matrix[ant][i] = target_node
-                            ant_matrix[ant][CURRENT_NODE_COL] = target_node
-                            target_node_set = True
+    #             target_node_set = False
+    #             if not target_node_visited:
+    #                 for i in range(NUM_NODES):
+    #                     if prev_visited_matrix[ant][i] == -1 and not target_node_set:
+    #                         prev_visited_matrix[ant][i] = target_node
+    #                         ant_matrix[ant][CURRENT_NODE_COL] = target_node
+    #                         target_node_set = True
 
-        # Calculate path solution, distance
-        dist = 0
-        for idx in range(NUM_NODES - 1):
-            current_node = prev_visited_matrix[ant][idx]
-            next_node = prev_visited_matrix[ant][idx + 1]
-            dist += distances_matrix[current_node][next_node]
+    #     # Calculate path solution, distance
+    #     dist = 0
+    #     for idx in range(NUM_NODES - 1):
+    #         current_node = prev_visited_matrix[ant][idx]
+    #         next_node = prev_visited_matrix[ant][idx + 1]
+    #         dist += distances_matrix[current_node][next_node]
 
-        dist += distances_matrix[int(prev_visited_matrix[ant][0])][
-            int(prev_visited_matrix[ant][NUM_NODES - 1])
-        ]
+    #     dist += distances_matrix[int(prev_visited_matrix[ant][0])][
+    #         int(prev_visited_matrix[ant][NUM_NODES - 1])
+    #     ]
 
-        if dist < path_solution_matrix[ant][0]:
-            path_solution_matrix[ant][0] = dist
-            for i in range(1, NUM_NODES + 1):
-                path_solution_matrix[ant][i] = prev_visited_matrix[ant][i - 1]
+    #     if dist < path_solution_matrix[ant][0]:
+    #         path_solution_matrix[ant][0] = dist
+    #         for i in range(1, NUM_NODES + 1):
+    #             path_solution_matrix[ant][i] = prev_visited_matrix[ant][i - 1]
 
-    for ant in range(NUM_ANTS):
-        prev_visited_matrix[ant][0] = ant
-        for node in range(1, NUM_NODES):
-            prev_visited_matrix[ant][node] = -1
-        ant_matrix[ant][INDEX_COL] = ant
-        ant_matrix[ant][CURRENT_NODE_COL] = ant
-        ant_matrix[ant][STARTING_NODE_COL] = ant
+    # for ant in range(NUM_ANTS):
+    #     prev_visited_matrix[ant][0] = ant
+    #     for node in range(1, NUM_NODES):
+    #         prev_visited_matrix[ant][node] = -1
+    #     ant_matrix[ant][INDEX_COL] = ant
+    #     ant_matrix[ant][CURRENT_NODE_COL] = ant
+    #     ant_matrix[ant][STARTING_NODE_COL] = ant
