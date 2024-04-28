@@ -23,36 +23,39 @@ STARTING_NODE_COL = 2
 ALPHA = 1
 BETA = 1
 
-# def get_ant_solution():
-#     dll = ctypes.CDLL("./ant_solution.so", mode=ctypes.RTLD_GLOBAL)
-#     func = dll.ant_solution
-#     func.argtypes = [POINTER(c_float), POINTER(c_float), POINTER(c_float)]
-#     return func
 
-# __ant_solution = get_ant_solution()
+def get_ant_solution():
+    dll = ctypes.CDLL("./ant_solution.so", mode=ctypes.RTLD_GLOBAL)
+    func = dll.ant_solution
+    func.argtypes = [POINTER(c_float), POINTER(c_float), POINTER(c_float)]
+    return func
 
-# def ant_solution(prev_visited_matrix, distances, dist_sums):
-#     prev_visited_p = prev_visited.ctypes.data_as(POINTER(c_float))
-#     distances_p = distances.ctypes.data_as(POINTER(c_float))
-#     dist_sum_p = dist_sums.ctypes.data_as(POINTER(c_float))
 
-#     __ant_solution(prev_visited_p, distances_p, dist_sums_p)
+__ant_solution = get_ant_solution()
+
+
+def ant_solution(prev_visited_matrix, distances_matrix, pheromones_matrix):
+    prev_visited_p = prev_visited_matrix.ctypes.data_as(POINTER(c_float))
+    distances_matrix_p = distances_matrix.ctypes.data_as(POINTER(c_float))
+    pheromones_matrix_p = pheromones_matrix.ctypes.data_as(POINTER(c_float))
+
+    __ant_solution(prev_visited_p, distances_matrix_p, pheromones_matrix_p)
 
 
 def initialize_matrices():
     df = pd.read_csv("aco_locations.csv", index_col="Point")
 
     n = len(df)
-    distances = np.zeros((n, n))
-    pheromones = np.full((n, n), PHEROMONE_INITIAL_VALUE)
+    distances_matrix = np.zeros((n, n))
+    pheromones_matrix = np.full((n, n), PHEROMONE_INITIAL_VALUE)
 
     for i in range(n):
         for j in range(n):
-            distances[i, j] = np.sqrt(
+            distances_matrix[i, j] = np.sqrt(
                 (df.iloc[i]["x_coord"] - df.iloc[j]["x_coord"]) ** 2
                 + (df.iloc[i]["y_coord"] - df.iloc[j]["y_coord"]) ** 2
             )
-    return (df, distances, pheromones)
+    return (df, distances_matrix, pheromones_matrix)
 
 
 def reset_ants(ants):
@@ -65,10 +68,11 @@ def reset_ants(ants):
 
 
 # Initialize
-df, distances, pheromones = initialize_matrices()
+df, distances_matrix, pheromones_matrix = initialize_matrices()
 
 ant_matrix = np.zeros((NUM_ANTS, SIZE_ANT_DATA), dtype=int)
 prev_visited_matrix = np.full((NUM_ANTS, NUM_NODES), -1)
+
 desires_matrix = np.zeros((NUM_ANTS, NUM_NODES))
 probability_matrix = np.zeros((NUM_ANTS, NUM_NODES))
 
@@ -90,6 +94,11 @@ best_solution = {"dist": MAX_DIST, "path": []}
 
 outcomes = [node for node in range(NUM_NODES)]
 for iteration in range(ITERS):
+    # ant_solution(
+    #     prev_visited_matrix.flatten(), distances_matrix.flatten(), pheromones_matrix.flatten()
+    # )
+
+    # break
     # Construct ant solutions
     for ant in range(NUM_ANTS):
         # Calculate desires
@@ -105,9 +114,9 @@ for iteration in range(ITERS):
                         break
 
                 if desire_node != current_node and not desire_node_visited:
-                    desire = ((pheromones[current_node][desire_node]) ** ALPHA) * (
-                        (1 / distances[current_node][desire_node]) ** BETA
-                    )
+                    desire = (
+                        (pheromones_matrix[current_node][desire_node]) ** ALPHA
+                    ) * ((1 / distances_matrix[current_node][desire_node]) ** BETA)
 
                     desires_matrix[ant][desire_node] = desire
 
@@ -159,9 +168,9 @@ for iteration in range(ITERS):
         for idx in range(NUM_NODES - 1):
             current_node = prev_visited_matrix[ant][idx]
             next_node = prev_visited_matrix[ant][idx + 1]
-            dist += distances[current_node][next_node]
+            dist += distances_matrix[current_node][next_node]
 
-        dist += distances[int(prev_visited_matrix[ant][0])][
+        dist += distances_matrix[int(prev_visited_matrix[ant][0])][
             int(prev_visited_matrix[ant][NUM_NODES - 1])
         ]
 
