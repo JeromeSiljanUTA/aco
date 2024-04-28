@@ -166,10 +166,10 @@ for iteration in range(ITERS):
 
     ants = reset_ants(ants)
 
-    #show_path(df, best_solution, iteration)
+    # show_path(df, best_solution, iteration)
 
 
-sol = sorted(solutions, key=lambda x: x['dist'])
+sol = sorted(solutions, key=lambda x: x["dist"])
 print(sol[-1])
 
 end_time = time.time()
