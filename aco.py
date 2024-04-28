@@ -27,19 +27,43 @@ BETA = 1
 def get_ant_solution():
     dll = ctypes.CDLL("./ant_solution.so", mode=ctypes.RTLD_GLOBAL)
     func = dll.ant_solution
-    func.argtypes = [POINTER(c_float), POINTER(c_float), POINTER(c_int)]
+    func.argtypes = [
+        POINTER(c_float),
+        POINTER(c_float),
+        POINTER(c_int),
+        POINTER(c_int),
+        POINTER(c_float),
+        POINTER(c_float),
+    ]
     return func
 
 
 __ant_solution = get_ant_solution()
 
 
-def ant_solution(distances_matrix, pheromones_matrix, prev_visited_matrix):
+def ant_solution(
+    distances_matrix,
+    pheromones_matrix,
+    prev_visited_matrix,
+    ant_matrix,
+    desires_matrix,
+    probability_matrix,
+):
     distances_matrix_p = distances_matrix.ctypes.data_as(POINTER(c_float))
     pheromones_matrix_p = pheromones_matrix.ctypes.data_as(POINTER(c_float))
     prev_visited_matrix_p = prev_visited_matrix.ctypes.data_as(POINTER(c_int))
+    ant_matrix_p = ant_matrix.ctypes.data_as(POINTER(c_int))
+    desires_matrix_p = desires_matrix.ctypes.data_as(POINTER(c_float))
+    probability_matrix_p = desires_matrix.ctypes.data_as(POINTER(c_float))
 
-    __ant_solution(distances_matrix_p, pheromones_matrix_p, prev_visited_matrix_p)
+    __ant_solution(
+        distances_matrix_p,
+        pheromones_matrix_p,
+        prev_visited_matrix_p,
+        ant_matrix_p,
+        desires_matrix_p,
+        probability_matrix_p,
+    )
 
 
 def initialize_matrices():
@@ -72,8 +96,8 @@ df, distances_matrix, pheromones_matrix = initialize_matrices()
 
 prev_visited_matrix = np.full((NUM_ANTS, NUM_NODES), -1, dtype=int)
 ant_matrix = np.zeros((NUM_ANTS, SIZE_ANT_DATA), dtype=int)
-probability_matrix = np.zeros((NUM_ANTS, NUM_NODES))
-desires_matrix = np.zeros((NUM_ANTS, NUM_NODES))
+probability_matrix = np.zeros((NUM_ANTS, NUM_NODES), dtype=float)
+desires_matrix = np.zeros((NUM_ANTS, NUM_NODES), dtype=float)
 
 # First element is distance, the rest show the actual path
 path_solution_matrix = np.full((NUM_ANTS, NUM_NODES + 1), MAX_DIST, dtype=float)
@@ -96,8 +120,18 @@ for iteration in range(ITERS):
     distances_matrix_cuda = distances_matrix.flatten().astype("float32")
     pheromones_matrix_cuda = pheromones_matrix.flatten().astype("float32")
     prev_visited_matrix_cuda = prev_visited_matrix.flatten().astype("int32")
+    ant_matrix_cuda = ant_matrix.flatten().astype("int32")
+    desires_matrix_cuda = desires_matrix.flatten().astype("float32")
+    probability_matrix_cuda = probability_matrix.flatten().astype("float32")
+
+    print(ant_matrix)
     ant_solution(
-        distances_matrix_cuda, pheromones_matrix_cuda, prev_visited_matrix_cuda
+        distances_matrix_cuda,
+        pheromones_matrix_cuda,
+        prev_visited_matrix_cuda,
+        ant_matrix_cuda,
+        desires_matrix_cuda,
+        probability_matrix_cuda,
     )
 
     break
