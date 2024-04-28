@@ -15,6 +15,9 @@ INDEX_COL = 0
 CURRENT_NODE_COL = 1
 STARTING_NODE_COL = 2
 
+ALPHA = 1
+BETA = 1
+
 np.set_printoptions(precision=4)
 
 ant_matrix = np.zeros((NUM_ANTS, SIZE_ANT_DATA), dtype=int)
@@ -139,9 +142,9 @@ for iteration in range(ITERS):
                 if DEBUG:
                     print(f"Comparing {current_node} and {node}")
 
-                desires_matrix[ant][node] = pheromones[current_node][node] * (
-                    1 / distances[current_node][node]
-                )
+                desires_matrix[ant][node] = (
+                    (pheromones[current_node][node]) ** ALPHA
+                ) * ((1 / distances[current_node][node]) ** BETA)
             else:
                 if DEBUG:
                     print(f"Not comparing {current_node} and {node}")
