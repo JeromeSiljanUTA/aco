@@ -1,6 +1,11 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import ctypes
+from ctypes import *
+
+np.set_printoptions(precision=4)
+
 
 ITERS = 3
 DEBUG = 0
@@ -18,15 +23,20 @@ STARTING_NODE_COL = 2
 ALPHA = 1
 BETA = 1
 
-np.set_printoptions(precision=4)
+# def get_ant_solution():
+#     dll = ctypes.CDLL("./ant_solution.so", mode=ctypes.RTLD_GLOBAL)
+#     func = dll.ant_solution
+#     func.argtypes = [POINTER(c_float), POINTER(c_float), POINTER(c_float)]
+#     return func
 
-ant_matrix = np.zeros((NUM_ANTS, SIZE_ANT_DATA), dtype=int)
-prev_visited_matrix = np.full((NUM_ANTS, NUM_NODES), -1)
-desires_matrix = np.zeros((NUM_ANTS, NUM_NODES))
-probability_matrix = np.zeros((NUM_ANTS, NUM_NODES))
+# __ant_solution = get_ant_solution()
 
-# First element is distance, the rest show the actual path
-path_solution_matrix = np.full((NUM_ANTS, NUM_NODES + 1), MAX_DIST, dtype=float)
+# def ant_solution(prev_visited_matrix, distances, dist_sums):
+#     prev_visited_p = prev_visited.ctypes.data_as(POINTER(c_float))
+#     distances_p = distances.ctypes.data_as(POINTER(c_float))
+#     dist_sum_p = dist_sums.ctypes.data_as(POINTER(c_float))
+
+#     __ant_solution(prev_visited_p, distances_p, dist_sums_p)
 
 
 def initialize_matrices():
@@ -56,6 +66,15 @@ def reset_ants(ants):
 
 # Initialize
 df, distances, pheromones = initialize_matrices()
+
+ant_matrix = np.zeros((NUM_ANTS, SIZE_ANT_DATA), dtype=int)
+prev_visited_matrix = np.full((NUM_ANTS, NUM_NODES), -1)
+desires_matrix = np.zeros((NUM_ANTS, NUM_NODES))
+probability_matrix = np.zeros((NUM_ANTS, NUM_NODES))
+
+# First element is distance, the rest show the actual path
+path_solution_matrix = np.full((NUM_ANTS, NUM_NODES + 1), MAX_DIST, dtype=float)
+
 
 if len(df) != NUM_NODES:
     print("------------------------------check dims------------------------------\n")
@@ -136,8 +155,6 @@ for iteration in range(ITERS):
                             target_node_set = True
 
         # Calculate path solution, distance
-
-        prev_visited_matrix[ant] = (1, 0, 2, 3, 4, 7, 6, 5)
         dist = 0
         for idx in range(NUM_NODES - 1):
             current_node = prev_visited_matrix[ant][idx]
