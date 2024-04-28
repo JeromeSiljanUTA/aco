@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 ITERS = 20
-DEBUG = 1
+DEBUG = 0
 PHEROMONE_INITIAL_VALUE = 0.1
 EVAPORATION_CONSTANT = 0.5
 Q = 1
@@ -121,14 +121,12 @@ for ant in range(NUM_ANTS):
     ant_matrix[ant][STARTING_NODE_COL] = ant
 
 
-print(prev_visited_matrix)
-print(ant_matrix)
-
 best_solution = {"dist": MAX_DIST, "path": []}
-for iteration in range(ITERS):
-    for ant in range(NUM_ANTS):
-        # Construct ant solutions
 
+outcomes = [node for node in range(NUM_NODES)]
+for iteration in range(ITERS):
+    # Construct ant solutions
+    for ant in range(NUM_ANTS):
         # Calculate desires
         for node in range(NUM_NODES):
             current_node = ant_matrix[ant][CURRENT_NODE_COL]
@@ -150,24 +148,27 @@ for iteration in range(ITERS):
 
                 desires_matrix[ant][node] = 0
 
-            # calc_desires(ant)
-            # probability_matrix[ant] = desires[ant] / np.sum(desires[ant])
-            # outcomes = [node for node in range(num_nodes)]
-            # choice = np.random.choice(outcomes, p=probs)
-            # ant.choose(choice)
+        # Calculate probabilities
+        probability_matrix[ant] = desires_matrix[ant] / np.sum(desires_matrix[ant])
 
-        # dist = 0
-        # for idx, current_node in enumerate(ant.previously_visited):
-        #     if idx + 1 == len(ant.previously_visited):
-        #         next_node = ant.previously_visited[0]
-        #     else:
-        #         next_node = ant.previously_visited[idx + 1]
-        #     dist += distances[current_node][next_node]
+        # Choose next node
+        # Randomly choose node
+        choice = np.random.choice(outcomes, p=probability_matrix[ant])
 
-        # # Compare Solution
-        # if dist < best_solution["dist"]:
-        #     best_solution["dist"] = dist
-        #     best_solution["path"] = ant.previously_visited
+    # ant.choose(choice)
+
+    # dist = 0
+    # for idx, current_node in enumerate(ant.previously_visited):
+    #     if idx + 1 == len(ant.previously_visited):
+    #         next_node = ant.previously_visited[0]
+    #     else:
+    #         next_node = ant.previously_visited[idx + 1]
+    #     dist += distances[current_node][next_node]
+
+    # # Compare Solution
+    # if dist < best_solution["dist"]:
+    #     best_solution["dist"] = dist
+    #     best_solution["path"] = ant.previously_visited
     break
     # Update Pheromones
     # Evaporation
