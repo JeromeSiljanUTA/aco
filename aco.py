@@ -3,24 +3,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 ITERS = 20
-DEBUG = 0
+DEBUG = 1
 PHEROMONE_INITIAL_VALUE = 0.1
 EVAPORATION_CONSTANT = 0.5
 Q = 1
 MAX_DIST = 100000
+SIZE_ANT_DATA = 3
+NUM_ANTS = 8
+NUM_NODES = NUM_ANTS
+INDEX_COL = 0
+CURRENT_NODE_COL = 1
+STARTING_NODE_COL = 2
 
 np.set_printoptions(precision=4)
 
-node_dict = {
-    0: "A",
-    1: "B",
-    2: "C",
-    3: "D",
-    4: "E",
-    5: "F",
-    6: "G",
-    7: "H",
-}
+ant_matrix = np.zeros((NUM_ANTS, SIZE_ANT_DATA), dtype=int)
+prev_visited_matrix = np.full((NUM_ANTS, NUM_NODES), -1)
+desires_matrix = np.zeros((NUM_ANTS, NUM_NODES))
+probability_matrix = np.zeros((NUM_ANTS, NUM_NODES))
 
 
 class Ant:
@@ -29,11 +29,6 @@ class Ant:
         self.current_node = index
         self.starting_node = index
         self.previously_visited = []
-
-    def announce(self):
-        print(
-            f"ant at {node_dict[self.current_node]} started at node {node_dict[self.starting_node]} has visited {self.previously_visited}"
-        )
 
     def choose(self, target_node):
         if self.current_node not in self.previously_visited:
@@ -115,39 +110,65 @@ def show_path(df, best_solution, iteration, display=True):
 
 # Initialize
 df, distances, pheromones = initialize_matrices()
-num_ants = len(distances)
-num_nodes = len(distances)
-ants = []
 
-for ant in range(num_ants):
-    index = ant
-    ants.append(Ant(index))
-    current_ant = ants[ant]
+if len(df) != NUM_NODES:
+    printf("------------------------------check dims------------------------------\n")
 
-best_solution = {"dist": MAX_DIST, path: []}
+for ant in range(NUM_ANTS):
+    prev_visited_matrix[ant][0] = ant
+    ant_matrix[ant][INDEX_COL] = ant
+    ant_matrix[ant][CURRENT_NODE_COL] = ant
+    ant_matrix[ant][STARTING_NODE_COL] = ant
+
+
+print(prev_visited_matrix)
+print(ant_matrix)
+
+best_solution = {"dist": MAX_DIST, "path": []}
 for iteration in range(ITERS):
-    for ant in ants:
+    for ant in range(NUM_ANTS):
         # Construct ant solutions
-        for i in range(num_nodes - 1):
-            desires = ant.calc_desires(num_nodes, pheromones, distances)
-            probs = desires / np.sum(desires)
-            outcomes = [node for node in range(num_nodes)]
-            choice = np.random.choice(outcomes, p=probs)
-            ant.choose(choice)
 
-        dist = 0
-        for idx, current_node in enumerate(ant.previously_visited):
-            if idx + 1 == len(ant.previously_visited):
-                next_node = ant.previously_visited[0]
+        # Calculate desires
+        for node in range(NUM_NODES):
+            current_node = ant_matrix[ant][CURRENT_NODE_COL]
+            # if haven't visited and not already there
+            if (
+                prev_visited_matrix[ant][node] != node
+                and ant_matrix[ant][STARTING_NODE_COL] != node
+            ):
+
+                if DEBUG:
+                    print(f"Comparing {current_node} and {node}")
+
+                desires_matrix[ant][node] = pheromones[current_node][node] * (
+                    1 / distances[current_node][node]
+                )
             else:
-                next_node = ant.previously_visited[idx + 1]
-            dist += distances[current_node][next_node]
+                if DEBUG:
+                    print(f"Not comparing {current_node} and {node}")
 
-        # Compare Solution
-        if dist < best_solution["dist"]:
-            best_solution["dist"] = dist
-            best_solution["path"] = ant.previously_visited
+                desires_matrix[ant][node] = 0
 
+            # calc_desires(ant)
+            # probability_matrix[ant] = desires[ant] / np.sum(desires[ant])
+            # outcomes = [node for node in range(num_nodes)]
+            # choice = np.random.choice(outcomes, p=probs)
+            # ant.choose(choice)
+
+        # dist = 0
+        # for idx, current_node in enumerate(ant.previously_visited):
+        #     if idx + 1 == len(ant.previously_visited):
+        #         next_node = ant.previously_visited[0]
+        #     else:
+        #         next_node = ant.previously_visited[idx + 1]
+        #     dist += distances[current_node][next_node]
+
+        # # Compare Solution
+        # if dist < best_solution["dist"]:
+        #     best_solution["dist"] = dist
+        #     best_solution["path"] = ant.previously_visited
+    break
     # Update Pheromones
     # Evaporation
     pheromones *= 1 - EVAPORATION_CONSTANT
@@ -163,6 +184,7 @@ for iteration in range(ITERS):
     ants = reset_ants(ants)
 
     show_path(df, best_solution, iteration)
+    break
 
 
 print(best_solution)
