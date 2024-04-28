@@ -27,17 +27,19 @@ BETA = 1
 def get_ant_solution():
     dll = ctypes.CDLL("./ant_solution.so", mode=ctypes.RTLD_GLOBAL)
     func = dll.ant_solution
-    func.argtypes = [POINTER(c_int)]
+    func.argtypes = [POINTER(c_float), POINTER(c_float), POINTER(c_int)]
     return func
 
 
 __ant_solution = get_ant_solution()
 
 
-def ant_solution(prev_visited_matrix):
+def ant_solution(distances_matrix, pheromones_matrix, prev_visited_matrix):
+    distances_matrix_p = distances_matrix.ctypes.data_as(POINTER(c_float))
+    pheromones_matrix_p = pheromones_matrix.ctypes.data_as(POINTER(c_float))
     prev_visited_matrix_p = prev_visited_matrix.ctypes.data_as(POINTER(c_int))
 
-    __ant_solution(prev_visited_matrix_p)
+    __ant_solution(distances_matrix_p, pheromones_matrix_p, prev_visited_matrix_p)
 
 
 def initialize_matrices():
@@ -91,7 +93,12 @@ best_solution = {"dist": MAX_DIST, "path": []}
 
 outcomes = [node for node in range(NUM_NODES)]
 for iteration in range(ITERS):
-    ant_solution(prev_visited_matrix.flatten().astype("int32"))
+    distances_matrix_cuda = distances_matrix.flatten().astype("float32")
+    pheromones_matrix_cuda = pheromones_matrix.flatten().astype("float32")
+    prev_visited_matrix_cuda = prev_visited_matrix.flatten().astype("int32")
+    ant_solution(
+        distances_matrix_cuda, pheromones_matrix_cuda, prev_visited_matrix_cuda
+    )
 
     break
     # Construct ant solutions
