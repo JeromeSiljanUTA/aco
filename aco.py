@@ -132,6 +132,8 @@ best_solution = {"dist": MAX_DIST, "path": []}
 outcomes = [node for node in range(num_nodes)]
 
 solutions = []
+
+
 for iteration in range(ITERS):
     for ant in ants:
         # Construct ant solutions
@@ -149,7 +151,7 @@ for iteration in range(ITERS):
                 next_node = ant.previously_visited[idx + 1]
             dist += distances[current_node][next_node]
 
-        solution = {'dist' : dist, 'path' : ant.previously_visited}
+        solution = {"dist": dist, "path": ant.previously_visited}
         solutions.append(solution)
 
     # Update Pheromones
