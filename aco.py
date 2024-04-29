@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import ctypes
 from ctypes import *
+import time
+
+start = time.perf_counter()
 
 np.set_printoptions(precision=4)
 
@@ -117,7 +120,7 @@ for ant in range(NUM_ANTS):
     ant_matrix[ant][STARTING_NODE_COL] = ant
 
 
-best_solution = {"dist": MAX_DIST, "path": []}
+best_solution = np.full(NUM_ANTS * NUM_NODES, MAX_DIST)
 
 # outcomes = [node for node in range(NUM_NODES)]
 distances_matrix_cuda = distances_matrix.flatten().astype("float32")
@@ -127,6 +130,19 @@ ant_matrix_cuda = ant_matrix.flatten().astype("int32")
 desires_matrix_cuda = desires_matrix.flatten().astype("float32")
 probability_matrix_cuda = probability_matrix.flatten().astype("float32")
 path_solution_matrix_cuda = path_solution_matrix.flatten().astype("float32")
+
+
+def get_best_solution(solutions_matrix, best_solution):
+    winner = np.full(NUM_ANTS * NUM_NODES, MAX_DIST)
+    solutions_matrix = np.array(solutions_matrix)
+    for solution in solutions_matrix:
+        if solution[0] < winner[0]:
+            winner = solution
+
+    if winner[0] < best_solution[0]:
+        best_solution = winner
+
+    return winner, best_solution
 
 
 for iteration in range(ITERS):
@@ -140,4 +156,13 @@ for iteration in range(ITERS):
         path_solution_matrix_cuda,
     )
 
-    print(path_solution_matrix_cuda.reshape(NUM_ANTS, NUM_NODES + 1).astype(int))
+    winner, best_solution = get_best_solution(
+        path_solution_matrix_cuda.reshape(NUM_ANTS, NUM_NODES + 1).astype(int),
+        best_solution,
+    )
+    print(best_solution)
+
+
+end = time.perf_counter()
+
+print(f"{end-start}")
