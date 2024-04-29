@@ -1,0 +1,15 @@
+* Ant Colony Optimization (ACO)
+This project aims to implement ACO with the help of CUDA cores.
+
+[[file:path_solutions.gif][Path Solutions]]
+
+The data input and logic is run on the CPU in Python, but compiled CUDA modules are used for the heavier computation. This allows each ant to find its path in parallel, greatly reducing the amount of time each ACO run takes.
+
+** Timing information
+The tests for these were done on with 8 nodes at 1 ant per node
+
+| Method              | Notes      | Time (s) |
+|---------------------+------------+----------|
+| Pure CPU            | Pyton      |  0.37348 |
+| ant_solution        | CUDA       |  0.08953 |
+| ant_solution_coarse | CUDA, CF=2 |  0.08732 |
