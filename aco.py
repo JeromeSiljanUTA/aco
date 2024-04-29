@@ -139,7 +139,11 @@ for iteration in range(ITERS):
         path_solution_matrix_cuda,
     )
 
+    print(prev_visited_matrix_cuda.reshape(NUM_ANTS, NUM_NODES))
+
     break
+
+    # break
     # Construct ant solutions
     # for ant in range(NUM_ANTS):
     #     # Calculate desires
@@ -204,26 +208,26 @@ for iteration in range(ITERS):
     #                         ant_matrix[ant][CURRENT_NODE_COL] = target_node
     #                         target_node_set = True
 
-    #     # Calculate path solution, distance
-    #     dist = 0
-    #     for idx in range(NUM_NODES - 1):
-    #         current_node = prev_visited_matrix[ant][idx]
-    #         next_node = prev_visited_matrix[ant][idx + 1]
-    #         dist += distances_matrix[current_node][next_node]
+    # Calculate path solution, distance
+    # dist = 0
+    # for idx in range(NUM_NODES - 1):
+    #     current_node = prev_visited_matrix[ant][idx]
+    #     next_node = prev_visited_matrix[ant][idx + 1]
+    #     dist += distances_matrix[current_node][next_node]
 
-    #     dist += distances_matrix[int(prev_visited_matrix[ant][0])][
-    #         int(prev_visited_matrix[ant][NUM_NODES - 1])
-    #     ]
+    # dist += distances_matrix[int(prev_visited_matrix[ant][0])][
+    #     int(prev_visited_matrix[ant][NUM_NODES - 1])
+    # ]
 
-    #     if dist < path_solution_matrix[ant][0]:
-    #         path_solution_matrix[ant][0] = dist
-    #         for i in range(1, NUM_NODES + 1):
-    #             path_solution_matrix[ant][i] = prev_visited_matrix[ant][i - 1]
+    # if dist < path_solution_matrix[ant][0]:
+    #     path_solution_matrix[ant][0] = dist
+    #     for i in range(1, NUM_NODES + 1):
+    #         path_solution_matrix[ant][i] = prev_visited_matrix[ant][i - 1]
 
-    # for ant in range(NUM_ANTS):
-    #     prev_visited_matrix[ant][0] = ant
-    #     for node in range(1, NUM_NODES):
-    #         prev_visited_matrix[ant][node] = -1
-    #     ant_matrix[ant][INDEX_COL] = ant
-    #     ant_matrix[ant][CURRENT_NODE_COL] = ant
-    #     ant_matrix[ant][STARTING_NODE_COL] = ant
+    for ant in range(NUM_ANTS):
+        prev_visited_matrix[ant][0] = ant
+        for node in range(1, NUM_NODES):
+            prev_visited_matrix[ant][node] = -1
+        ant_matrix[ant][INDEX_COL] = ant
+        ant_matrix[ant][CURRENT_NODE_COL] = ant
+        ant_matrix[ant][STARTING_NODE_COL] = ant

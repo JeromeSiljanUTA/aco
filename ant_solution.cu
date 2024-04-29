@@ -77,7 +77,63 @@ __global__ void ant_solution_kernel(float *distances_matrix,
           break;
         }
       }
-      printf("Target %d\n", target_node);
+      bool current_node_visited = false;
+      bool target_node_visited = false;
+
+      for (int i = 0; i < NUM_NODES; i++) {
+        if (ant_matrix[idx * NUM_NODES + CURRENT_NODE_COL] !=
+            prev_visited_matrix[idx * NUM_NODES + i]) {
+          current_node_visited = true;
+        }
+      }
+
+      if (!current_node_visited) {
+        for (int i = 0; i < NUM_NODES; i++) {
+          if (prev_visited_matrix[idx * NUM_NODES + i] == -1) {
+            prev_visited_matrix[idx * NUM_NODES + i] =
+                ant_matrix[idx * NUM_NODES + CURRENT_NODE_COL];
+          }
+        }
+      }
+
+      for (int i = 0; i < NUM_NODES; i++) {
+        if (target_node == prev_visited_matrix[idx * NUM_NODES + i]) {
+          target_node_visited = true;
+        }
+      }
+      bool target_node_set = false;
+
+      if (!target_node_visited) {
+        for (int i = 0; i < NUM_NODES; i++) {
+          if ((prev_visited_matrix[idx * NUM_NODES + i] == -1) &&
+              (!target_node_set)) {
+
+            prev_visited_matrix[idx * NUM_NODES + i] = target_node;
+            ant_matrix[idx * NUM_NODES + CURRENT_NODE_COL] = target_node;
+            target_node_set = true;
+          }
+        }
+      }
+    }
+
+    float dist = 0;
+    int current_node, next_node;
+    for (int i = 0; i < NUM_NODES - 1; i++) {
+      current_node = prev_visited_matrix[idx * NUM_NODES + i];
+      next_node = prev_visited_matrix[idx * NUM_NODES + i + 1];
+      dist += distances_matrix[current_node * NUM_NODES + next_node];
+    }
+
+    current_node = prev_visited_matrix[idx * NUM_NODES + 0];
+    next_node = prev_visited_matrix[idx * NUM_NODES + NUM_NODES - 1];
+    dist += distances_matrix[current_node * NUM_NODES + next_node];
+
+    if (dist < path_solution_matrix[idx * NUM_NODES + 0]) {
+      path_solution_matrix[idx * NUM_NODES + 1] = dist;
+      for (int i = 1; i < NUM_NODES + 1; i++) {
+        path_solution_matrix[idx * NUM_NODES + i] =
+            prev_visited_matrix[idx * NUM_NODES + i - 1];
+      }
     }
   }
 }
@@ -117,24 +173,21 @@ void ant_solution(float *distances_matrix, float *pheromones_matrix,
              NUM_ANTS * NUM_NODES * sizeof(float), cudaMemcpyHostToDevice);
   cudaMemcpy(d_probability_matrix, probability_matrix,
              NUM_ANTS * NUM_NODES * sizeof(float), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_probability_matrix, probability_matrix,
+  cudaMemcpy(d_path_solution_matrix, path_solution_matrix,
              NUM_ANTS * (NUM_NODES + 1) * sizeof(float),
              cudaMemcpyHostToDevice);
 
-  ant_solution_kernel<<<NUM_ANTS, 1>>>(d_distances_matrix, d_pheromones_matrix,
-                                       d_prev_visited_matrix, d_ant_matrix,
-                                       d_desires_matrix, d_probability_matrix,
-                                       d_path_solution_matrix);
+  ant_solution_kernel<<<1, 1>>>(d_distances_matrix, d_pheromones_matrix,
+                                d_prev_visited_matrix, d_ant_matrix,
+                                d_desires_matrix, d_probability_matrix,
+                                d_path_solution_matrix);
 
-  cudaMemcpy(probability_matrix, d_probability_matrix,
+  cudaMemcpy(prev_visited_matrix, d_prev_visited_matrix,
              NUM_ANTS * NUM_NODES * sizeof(float), cudaMemcpyDeviceToHost);
 
-  for (int i = 0; i < NUM_ANTS; i++) {
-    for (int j = 0; j < NUM_NODES; j++) {
-      printf("%0.4f\t", probability_matrix[i * NUM_NODES + j]);
-    }
-    printf("\n");
-  }
+  cudaMemcpy(path_solution_matrix, d_path_solution_matrix,
+             NUM_ANTS * (NUM_NODES + 1) * sizeof(float),
+             cudaMemcpyDeviceToHost);
 
   cudaFree(d_prev_visited_matrix);
   cudaFree(d_distances_matrix);
