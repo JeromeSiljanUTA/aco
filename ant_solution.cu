@@ -1,5 +1,6 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
+#include <curand_kernel.h>
 #include <stdio.h>
 
 #define NUM_ANTS 8
@@ -51,8 +52,9 @@ __global__ void ant_solution_kernel(float *distances_matrix,
             desires_matrix[idx * NUM_NODES + desires_node_offset];
       }
 
-      if(desires_row_sum == 0){
-	printf("------------------------------DIVIDE BY ZERO------------------------------n");
+      if (desires_row_sum == 0) {
+        printf("------------------------------DIVIDE BY "
+               "ZERO------------------------------n");
       }
       for (int probability_node = 0; probability_node < NUM_NODES;
            probability_node++) {
@@ -60,6 +62,22 @@ __global__ void ant_solution_kernel(float *distances_matrix,
             desires_matrix[idx * NUM_NODES + probability_node] /
             desires_row_sum;
       }
+
+      // Generate random target
+      curandState state;
+      curand_init(clock64(), idx, 0, &state);
+      float random_selection = curand_uniform(&state);
+
+      int target_node = 0;
+      float probability_sum = 0;
+      for (int outcome = 0; outcome < NUM_NODES; outcome++) {
+        probability_sum += probability_matrix[idx * NUM_NODES + outcome];
+        if (random_selection < probability_sum) {
+          target_node = outcome;
+          break;
+        }
+      }
+      printf("Target %d\n", target_node);
     }
   }
 }
