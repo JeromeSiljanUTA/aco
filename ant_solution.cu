@@ -50,6 +50,16 @@ __global__ void ant_solution_kernel(float *distances_matrix,
         desires_row_sum +=
             desires_matrix[idx * NUM_NODES + desires_node_offset];
       }
+
+      if(desires_row_sum == 0){
+	printf("------------------------------DIVIDE BY ZERO------------------------------n");
+      }
+      for (int probability_node = 0; probability_node < NUM_NODES;
+           probability_node++) {
+        probability_matrix[idx * NUM_NODES + probability_node] =
+            desires_matrix[idx * NUM_NODES + probability_node] /
+            desires_row_sum;
+      }
     }
   }
 }
@@ -98,12 +108,12 @@ void ant_solution(float *distances_matrix, float *pheromones_matrix,
                                        d_desires_matrix, d_probability_matrix,
                                        d_path_solution_matrix);
 
-  cudaMemcpy(desires_matrix, d_desires_matrix,
+  cudaMemcpy(probability_matrix, d_probability_matrix,
              NUM_ANTS * NUM_NODES * sizeof(float), cudaMemcpyDeviceToHost);
 
   for (int i = 0; i < NUM_ANTS; i++) {
     for (int j = 0; j < NUM_NODES; j++) {
-      printf("%0.4f\t", desires_matrix[i * NUM_NODES + j]);
+      printf("%0.4f\t", probability_matrix[i * NUM_NODES + j]);
     }
     printf("\n");
   }
