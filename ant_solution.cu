@@ -126,14 +126,22 @@ __global__ void ant_solution_kernel(float *distances_matrix,
   next_node = prev_visited_matrix[idx * NUM_NODES + NUM_NODES - 1];
   dist += distances_matrix[current_node * NUM_NODES + next_node];
 
-  if (dist < path_solution_matrix[idx * NUM_NODES + 0]) {
-    printf("New best dist: %f\n", dist);
-    path_solution_matrix[idx * NUM_NODES + 0] = dist;
+  if (dist < path_solution_matrix[idx * (NUM_NODES+1) + 0]) {
+    path_solution_matrix[idx * (NUM_NODES+1) + 0] = dist;
     for (int i = 1; i < NUM_NODES + 1; i++) {
-      path_solution_matrix[idx * NUM_NODES + i] =
-	(float)prev_visited_matrix[idx * NUM_NODES + i - 1];
+      path_solution_matrix[idx * (NUM_NODES+1) + i] =
+	(float)prev_visited_matrix[idx * (NUM_NODES+1) + i - 1];
     }
   }
+
+  // Reset ant
+  prev_visited_matrix[idx * NUM_NODES + 0] = idx;
+  for (int i = 1; i < NUM_NODES; i++) {
+    prev_visited_matrix[idx * NUM_NODES + i] = -1;
+  }
+  ant_matrix[idx * NUM_NODES + INDEX_COL] = idx;
+  ant_matrix[idx * NUM_NODES + CURRENT_NODE_COL] = idx;
+  ant_matrix[idx * NUM_NODES + STARTING_NODE_COL] = idx;
 }
 
 extern "C" {
@@ -175,7 +183,7 @@ void ant_solution(float *distances_matrix, float *pheromones_matrix,
              NUM_ANTS * (NUM_NODES + 1) * sizeof(float),
              cudaMemcpyHostToDevice);
 
-  ant_solution_kernel<<<1, 1>>>(d_distances_matrix, d_pheromones_matrix,
+  ant_solution_kernel<<<NUM_ANTS, 1>>>(d_distances_matrix, d_pheromones_matrix,
                                 d_prev_visited_matrix, d_ant_matrix,
                                 d_desires_matrix, d_probability_matrix,
                                 d_path_solution_matrix);

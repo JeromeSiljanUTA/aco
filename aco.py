@@ -7,7 +7,7 @@ from ctypes import *
 np.set_printoptions(precision=4)
 
 
-ITERS = 3
+ITERS = 30
 DEBUG = 0
 PHEROMONE_INITIAL_VALUE = 0.1
 EVAPORATION_CONSTANT = 0.5
@@ -119,16 +119,17 @@ for ant in range(NUM_ANTS):
 
 best_solution = {"dist": MAX_DIST, "path": []}
 
-outcomes = [node for node in range(NUM_NODES)]
-for iteration in range(ITERS):
-    distances_matrix_cuda = distances_matrix.flatten().astype("float32")
-    pheromones_matrix_cuda = pheromones_matrix.flatten().astype("float32")
-    prev_visited_matrix_cuda = prev_visited_matrix.flatten().astype("int32")
-    ant_matrix_cuda = ant_matrix.flatten().astype("int32")
-    desires_matrix_cuda = desires_matrix.flatten().astype("float32")
-    probability_matrix_cuda = probability_matrix.flatten().astype("float32")
-    path_solution_matrix_cuda = path_solution_matrix.flatten().astype("float32")
+# outcomes = [node for node in range(NUM_NODES)]
+distances_matrix_cuda = distances_matrix.flatten().astype("float32")
+pheromones_matrix_cuda = pheromones_matrix.flatten().astype("float32")
+prev_visited_matrix_cuda = prev_visited_matrix.flatten().astype("int32")
+ant_matrix_cuda = ant_matrix.flatten().astype("int32")
+desires_matrix_cuda = desires_matrix.flatten().astype("float32")
+probability_matrix_cuda = probability_matrix.flatten().astype("float32")
+path_solution_matrix_cuda = path_solution_matrix.flatten().astype("float32")
 
+
+for iteration in range(ITERS):
     ant_solution(
         distances_matrix_cuda,
         pheromones_matrix_cuda,
@@ -139,95 +140,4 @@ for iteration in range(ITERS):
         path_solution_matrix_cuda,
     )
 
-    print(prev_visited_matrix_cuda.reshape(NUM_ANTS, NUM_NODES))
-
-    break
-
-    # break
-    # Construct ant solutions
-    # for ant in range(NUM_ANTS):
-    #     # Calculate desires
-    #     for node in range(NUM_NODES):
-    #         for desire_node in range(NUM_NODES):
-    #             current_node = ant_matrix[ant][CURRENT_NODE_COL]
-
-    #             desire_node_visited = False
-    #             # Has desire node not been marked visited
-    #             for i in range(NUM_NODES):
-    #                 if desire_node == prev_visited_matrix[ant][i]:
-    #                     desire_node_visited = True
-    #                     break
-
-    #             if desire_node != current_node and not desire_node_visited:
-    #                 desire = (
-    #                     (pheromones_matrix[current_node][desire_node]) ** ALPHA
-    #                 ) * ((1 / distances_matrix[current_node][desire_node]) ** BETA)
-
-    #                 desires_matrix[ant][desire_node] = desire
-
-    #                 if DEBUG:
-    #                     print(f"Comparing {current_node} and {desire_node}: {desire}")
-
-    #             else:
-    #                 if DEBUG:
-    #                     print(f"Not comparing {current_node} and {desire_node}")
-
-    #                 desires_matrix[ant][desire_node] = 0
-
-    #         if node != NUM_NODES - 1:
-    #             probability_matrix[ant] = desires_matrix[ant] / np.sum(
-    #                 desires_matrix[ant]
-    #             )
-    #             # Choosing next node
-    #             target_node = np.random.choice(outcomes, p=probability_matrix[ant])
-    #             current_node_visited = False
-    #             target_node_visited = False
-
-    #             # Has current node not been marked visited
-    #             for i in range(NUM_NODES):
-    #                 if ant_matrix[ant][CURRENT_NODE_COL] != prev_visited_matrix[ant][i]:
-    #                     current_node_visited = True
-
-    #             if not current_node_visited:
-    #                 for i in range(NUM_NODES):
-    #                     if prev_visited_matrix[ant][i] == -1:
-    #                         prev_visited_matrix[ant][i] = ant_matrix[ant][
-    #                             CURRENT_NODE_COL
-    #                         ]
-
-    #             # Has target_node been marked visited?
-    #             for i in range(NUM_NODES):
-    #                 if target_node == prev_visited_matrix[ant][i]:
-    #                     target_node_visited = True
-
-    #             target_node_set = False
-    #             if not target_node_visited:
-    #                 for i in range(NUM_NODES):
-    #                     if prev_visited_matrix[ant][i] == -1 and not target_node_set:
-    #                         prev_visited_matrix[ant][i] = target_node
-    #                         ant_matrix[ant][CURRENT_NODE_COL] = target_node
-    #                         target_node_set = True
-
-    # Calculate path solution, distance
-    # dist = 0
-    # for idx in range(NUM_NODES - 1):
-    #     current_node = prev_visited_matrix[ant][idx]
-    #     next_node = prev_visited_matrix[ant][idx + 1]
-    #     dist += distances_matrix[current_node][next_node]
-
-    # dist += distances_matrix[int(prev_visited_matrix[ant][0])][
-    #     int(prev_visited_matrix[ant][NUM_NODES - 1])
-    # ]
-
-    # if dist < path_solution_matrix[ant][0]:
-    #     path_solution_matrix[ant][0] = dist
-    #     for i in range(1, NUM_NODES + 1):
-    #         path_solution_matrix[ant][i] = prev_visited_matrix[ant][i - 1]
-
-    for ant in range(NUM_ANTS):
-        prev_visited_matrix[ant][0] = ant
-        for node in range(1, NUM_NODES):
-            prev_visited_matrix[ant][node] = -1
-        ant_matrix[ant][INDEX_COL] = ant
-        ant_matrix[ant][CURRENT_NODE_COL] = ant
-        ant_matrix[ant][STARTING_NODE_COL] = ant
+    print(path_solution_matrix_cuda.reshape(NUM_ANTS, NUM_NODES + 1).astype(int))
