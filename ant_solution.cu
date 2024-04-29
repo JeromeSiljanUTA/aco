@@ -24,22 +24,20 @@ __global__ void ant_solution_kernel(float *distances_matrix,
   for (int node = 0; node < NUM_NODES; node++) {
     for (int desire_node = 0; desire_node < NUM_NODES; desire_node++) {
       int current_node = ant_matrix[idx * SIZE_ANT_DATA + CURRENT_NODE_COL];
-
       bool desire_node_visited = false;
-
       for (int i = 0; i < NUM_NODES; i++) {
         if (desire_node == prev_visited_matrix[idx * NUM_NODES + i]) {
           desire_node_visited = true;
           break;
         }
       }
-
       if ((desire_node != current_node) && !(desire_node_visited)) {
         int _idx = current_node * NUM_NODES + desire_node;
         float desire =
             (pheromones_matrix[_idx]) * (1 / (distances_matrix[_idx]));
-
         desires_matrix[idx * NUM_NODES + desire_node] = desire;
+      } else {
+        desires_matrix[idx * NUM_NODES + desire_node] = 0;
       }
     }
 
@@ -115,25 +113,25 @@ __global__ void ant_solution_kernel(float *distances_matrix,
         }
       }
     }
-
-    float dist = 0;
-    int current_node, next_node;
-    for (int i = 0; i < NUM_NODES - 1; i++) {
-      current_node = prev_visited_matrix[idx * NUM_NODES + i];
-      next_node = prev_visited_matrix[idx * NUM_NODES + i + 1];
-      dist += distances_matrix[current_node * NUM_NODES + next_node];
-    }
-
-    current_node = prev_visited_matrix[idx * NUM_NODES + 0];
-    next_node = prev_visited_matrix[idx * NUM_NODES + NUM_NODES - 1];
+  }
+  float dist = 0;
+  int current_node, next_node;
+  for (int i = 0; i < NUM_NODES - 1; i++) {
+    current_node = prev_visited_matrix[idx * NUM_NODES + i];
+    next_node = prev_visited_matrix[idx * NUM_NODES + i + 1];
     dist += distances_matrix[current_node * NUM_NODES + next_node];
+  }
 
-    if (dist < path_solution_matrix[idx * NUM_NODES + 0]) {
-      path_solution_matrix[idx * NUM_NODES + 1] = dist;
-      for (int i = 1; i < NUM_NODES + 1; i++) {
-        path_solution_matrix[idx * NUM_NODES + i] =
-            prev_visited_matrix[idx * NUM_NODES + i - 1];
-      }
+  current_node = prev_visited_matrix[idx * NUM_NODES + 0];
+  next_node = prev_visited_matrix[idx * NUM_NODES + NUM_NODES - 1];
+  dist += distances_matrix[current_node * NUM_NODES + next_node];
+
+  if (dist < path_solution_matrix[idx * NUM_NODES + 0]) {
+    printf("New best dist: %f\n", dist);
+    path_solution_matrix[idx * NUM_NODES + 0] = dist;
+    for (int i = 1; i < NUM_NODES + 1; i++) {
+      path_solution_matrix[idx * NUM_NODES + i] =
+	(float)prev_visited_matrix[idx * NUM_NODES + i - 1];
     }
   }
 }
