@@ -33,14 +33,23 @@ __global__ void ant_solution_kernel(float *distances_matrix,
         }
       }
 
-      if((desire_node != current_node) && !(desire_node_visited)){
-	int _idx = current_node * NUM_NODES + desire_node;
-	float desire = (pheromones_matrix[_idx]) * (1/(distances_matrix[_idx]));
+      if ((desire_node != current_node) && !(desire_node_visited)) {
+        int _idx = current_node * NUM_NODES + desire_node;
+        float desire =
+            (pheromones_matrix[_idx]) * (1 / (distances_matrix[_idx]));
 
-	desires_matrix[idx * NUM_NODES + desire_node] = desire;
+        desires_matrix[idx * NUM_NODES + desire_node] = desire;
       }
+    }
 
-      break;
+    if (node != NUM_NODES - 1) {
+      // Calculate sum of desires_matrix row
+      float desires_row_sum = 0;
+      for (int desires_node_offset = 0; desires_node_offset < NUM_NODES;
+           desires_node_offset++) {
+        desires_row_sum +=
+            desires_matrix[idx * NUM_NODES + desires_node_offset];
+      }
     }
   }
 }
@@ -89,17 +98,15 @@ void ant_solution(float *distances_matrix, float *pheromones_matrix,
                                        d_desires_matrix, d_probability_matrix,
                                        d_path_solution_matrix);
 
+  cudaMemcpy(desires_matrix, d_desires_matrix,
+             NUM_ANTS * NUM_NODES * sizeof(float), cudaMemcpyDeviceToHost);
 
-  cudaMemcpy(desires_matrix, d_desires_matrix, NUM_ANTS * NUM_NODES * sizeof(float),
-             cudaMemcpyDeviceToHost);
-
-  for(int i = 0; i < NUM_ANTS; i++){
-    for(int j = 0; j < NUM_NODES; j++){
+  for (int i = 0; i < NUM_ANTS; i++) {
+    for (int j = 0; j < NUM_NODES; j++) {
       printf("%0.4f\t", desires_matrix[i * NUM_NODES + j]);
     }
     printf("\n");
   }
-
 
   cudaFree(d_prev_visited_matrix);
   cudaFree(d_distances_matrix);
