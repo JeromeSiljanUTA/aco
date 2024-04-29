@@ -10,7 +10,7 @@ start = time.perf_counter()
 np.set_printoptions(precision=4)
 
 
-ITERS = 30
+ITERS = 300
 DEBUG = 0
 PHEROMONE_INITIAL_VALUE = 0.1
 EVAPORATION_CONSTANT = 0.5
