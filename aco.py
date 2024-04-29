@@ -10,7 +10,7 @@ start = time.perf_counter()
 np.set_printoptions(precision=4)
 
 
-ITERS = 300
+ITERS = 99
 DEBUG = 0
 PHEROMONE_INITIAL_VALUE = 0.1
 EVAPORATION_CONSTANT = 0.5
@@ -132,6 +132,28 @@ probability_matrix_cuda = probability_matrix.flatten().astype("float32")
 path_solution_matrix_cuda = path_solution_matrix.flatten().astype("float32")
 
 
+def graph_solution(solution, iteration):
+    points = solution[1:]
+    for i in range(len(points) - 1):
+        plt.plot(
+            [df.loc[points[i], "x_coord"], df.loc[points[i + 1], "x_coord"]],
+            [df.loc[points[i], "y_coord"], df.loc[points[i + 1], "y_coord"]],
+            "r-",
+        )
+
+    plt.plot(
+        [df.loc[points[-1], "x_coord"], df.loc[points[0], "x_coord"]],
+        [df.loc[points[-1], "y_coord"], df.loc[points[0], "y_coord"]],
+        "r-",
+    )
+
+    plt.grid(True)
+    plt.title(f"Best path at iteration n={iteration}")
+    plt.savefig(f"graph_{iteration:02}.png")
+    plt.close()
+    # plt.show()
+
+
 def get_best_solution(solutions_matrix, best_solution):
     winner = np.full(NUM_ANTS * NUM_NODES, MAX_DIST)
     solutions_matrix = np.array(solutions_matrix)
@@ -160,9 +182,8 @@ for iteration in range(ITERS):
         path_solution_matrix_cuda.reshape(NUM_ANTS, NUM_NODES + 1).astype(float),
         best_solution,
     )
-    # print(best_solution)
+    graph_solution(best_solution, iteration)
 
-print(best_solution)
 end = time.perf_counter()
-
-print(f"{end-start}")
+# print(f"{end-start}")
+graph_solution(best_solution, ITERS)
