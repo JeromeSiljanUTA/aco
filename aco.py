@@ -120,7 +120,7 @@ for ant in range(NUM_ANTS):
     ant_matrix[ant][STARTING_NODE_COL] = ant
 
 
-best_solution = np.full(NUM_ANTS * NUM_NODES, MAX_DIST)
+best_solution = np.full(NUM_ANTS * NUM_NODES, MAX_DIST).astype("float32")
 
 # outcomes = [node for node in range(NUM_NODES)]
 distances_matrix_cuda = distances_matrix.flatten().astype("float32")
@@ -157,12 +157,12 @@ for iteration in range(ITERS):
     )
 
     winner, best_solution = get_best_solution(
-        path_solution_matrix_cuda.reshape(NUM_ANTS, NUM_NODES + 1).astype(int),
+        path_solution_matrix_cuda.reshape(NUM_ANTS, NUM_NODES + 1).astype(float),
         best_solution,
     )
-    print(best_solution)
+    # print(best_solution)
 
-
+print(best_solution)
 end = time.perf_counter()
 
 print(f"{end-start}")
